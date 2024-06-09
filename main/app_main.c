@@ -23,10 +23,17 @@
 #include "esp_log.h"
 #include "mqtt_client.h"
 
+
+
 // Set your local broker URI
-#define BROKER_URI "mqtts://192.168.68.54:8883"
+// Example #define BROKER_URI "mqtts://192.168.68.54:8883" // Original
+// #define BROKER_URI "mqtts://16.16.205.129:8883" // Edición #1
+#define BROKER_URI "mqtts://mosquitto.iotsuryon.com.ar:8883" // Edición #2
 
 static const char *TAG = "MQTTS_EXAMPLE";
+
+#define MOSQUITO_USER_NAME              "dasso"
+#define MOSQUITO_USER_PASSWORD          "dassoPass"
 
 extern const uint8_t client_cert_pem_start[] asm("_binary_client_crt_start");
 extern const uint8_t client_cert_pem_end[] asm("_binary_client_crt_end");
@@ -113,6 +120,8 @@ static void mqtt_app_start(void)
         .broker.verification.certificate = (const char *)server_cert_pem_start,
         .credentials.authentication.certificate = (const char *)client_cert_pem_start,
         .credentials.authentication.key = (const char *)client_key_pem_start,
+        .credentials.username = MOSQUITO_USER_NAME,
+        .credentials.authentication.password = MOSQUITO_USER_PASSWORD
     };
 
     ESP_LOGI(TAG, "[APP] Free memory: %ld bytes", esp_get_free_heap_size());

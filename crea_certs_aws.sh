@@ -2,11 +2,11 @@
 
 # -- Set local IP --
 # IP="192.168.68.54" Leopoldo dijo de poner la IP de nuestra PC. Pruebo poniendo la IP privada de donde está alojado el broker.
-IP="51.20.85.255"
+# IP="51.20.85.255"
 
-SUBJECT_CA="/C=AR/ST=CABA/L=CABA/O=FiUBA/OU=CA/CN=$IP"
-SUBJECT_SERVER="/C=AR/ST=CABA/L=CABA/O=FiUBA/OU=Server/CN=$IP"
-SUBJECT_CLIENT="/C=AR/ST=CABA/L=CABA/O=FiUBA/OU=Client/CN=$IP"
+SUBJECT_CA="/C=AR/ST=CABA/L=CABA/O=FiUBA/OU=CA/CN=mosquitto.iotsuryon.com.ar"
+SUBJECT_SERVER="/C=AR/ST=CABA/L=CABA/O=FiUBA/OU=Server/CN=mosquitto.iotsuryon.com.ar"
+SUBJECT_CLIENT="/C=AR/ST=CABA/L=CABA/O=FiUBA/OU=Client/CN=mosquitto.iotsuryon.com.ar"
 
 
 function generate_CA () {
