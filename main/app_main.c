@@ -22,6 +22,7 @@
 
 #include "esp_log.h"
 #include "mqtt_client.h"
+#include "cJSON.h"
 
 
 
@@ -34,6 +35,8 @@ static const char *TAG = "MQTTS_EXAMPLE";
 
 #define MOSQUITO_USER_NAME              "dasso"
 #define MOSQUITO_USER_PASSWORD          "dassoPass"
+
+#define PERIODO_MEDICION 20
 
 extern const uint8_t client_cert_pem_start[] asm("_binary_client_crt_start");
 extern const uint8_t client_cert_pem_end[] asm("_binary_client_crt_end");
@@ -71,20 +74,25 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         msg_id = esp_mqtt_client_subscribe(client, "/topic/qos0", 0);
         ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
 
-        msg_id = esp_mqtt_client_subscribe(client, "/topic/qos1", 1);
+        msg_id = esp_mqtt_client_subscribe(client, "/daiot", 0);
         ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
 
-        msg_id = esp_mqtt_client_unsubscribe(client, "/topic/qos1");
-        ESP_LOGI(TAG, "sent unsubscribe successful, msg_id=%d", msg_id);
+        //msg_id = esp_mqtt_client_subscribe(client, "/topic/qos1", 1);
+        //ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
+
+        //msg_id = esp_mqtt_client_unsubscribe(client, "/topic/qos1");
+        //ESP_LOGI(TAG, "sent unsubscribe successful, msg_id=%d", msg_id);
         break;
     case MQTT_EVENT_DISCONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_DISCONNECTED");
         break;
-
+    
     case MQTT_EVENT_SUBSCRIBED:
         ESP_LOGI(TAG, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
+
         msg_id = esp_mqtt_client_publish(client, "/topic/qos0", "data", 0, 0, 0);
         ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
+        
         break;
     case MQTT_EVENT_UNSUBSCRIBED:
         ESP_LOGI(TAG, "MQTT_EVENT_UNSUBSCRIBED, msg_id=%d", event->msg_id);
@@ -96,6 +104,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         ESP_LOGI(TAG, "MQTT_EVENT_DATA");
         printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
         printf("DATA=%.*s\r\n", event->data_len, event->data);
+
         break;
     case MQTT_EVENT_ERROR:
         ESP_LOGI(TAG, "MQTT_EVENT_ERROR");
@@ -115,6 +124,10 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 
 static void mqtt_app_start(void)
 {
+    int msg_id;
+    int temperature = 15;
+    int humidity = 5;
+
     const esp_mqtt_client_config_t mqtt_cfg = {
         .broker.address.uri = BROKER_URI,
         .broker.verification.certificate = (const char *)server_cert_pem_start,
@@ -129,6 +142,36 @@ static void mqtt_app_start(void)
     /* The last argument may be used to pass data to the event handler, in this example mqtt_event_handler */
     esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, NULL);
     esp_mqtt_client_start(client);
+
+
+    // Código asociado a la medición
+    while (1)
+    {
+        
+        // Creación de un objeto JSON
+        cJSON *mensaje = cJSON_CreateObject();
+        cJSON_AddNumberToObject(mensaje, "dispositivoId", 23);
+        cJSON_AddStringToObject(mensaje, "nombre", "Demo-ESP32-C3");
+        cJSON_AddStringToObject(mensaje, "ubicacion", "Francia");
+        cJSON_AddNumberToObject(mensaje, "luz1", 0);
+        cJSON_AddNumberToObject(mensaje, "luz2", 0);
+        cJSON_AddNumberToObject(mensaje, "temperatura", temperature);
+        cJSON_AddNumberToObject(mensaje, "humedad", humidity);
+        
+        // Conversión del objeto JSON a una string
+        const char *json_string = cJSON_Print(mensaje);       
+        
+        msg_id = esp_mqtt_client_publish(client, "/daiot", json_string, 0, 0, 0);
+        ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
+        
+        temperature++;
+        humidity++;
+        vTaskDelay(PERIODO_MEDICION*1000 / portTICK_PERIOD_MS);
+
+    }
+    
+
+
 }
 
 void app_main(void)

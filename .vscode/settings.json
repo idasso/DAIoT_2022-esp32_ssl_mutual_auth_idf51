@@ -6,5 +6,10 @@
   "idf.openOcdConfigs": [
     "board/esp32c3-ftdi.cfg"
   ],
-  "idf.portWin": "COM5"
+  "idf.portWin": "COM5",
+  "files.associations": {
+    "stdio.h": "c",
+    "typeinfo": "c",
+    "cstdlib": "c"
+  }
 }
