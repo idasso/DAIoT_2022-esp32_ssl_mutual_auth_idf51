@@ -24,7 +24,14 @@
 #include "mqtt_client.h"
 #include "cJSON.h"
 
+#include "dht.h"
 
+
+
+// Definición de Variables asociadas al DHT11
+static const dht_sensor_type_t sensor_type = DHT_TYPE_DHT11;
+#define DHT_GPIO 0
+#define DHT_TYPE sensor_type
 
 // Set your local broker URI
 // Example #define BROKER_URI "mqtts://192.168.68.54:8883" // Original
@@ -51,6 +58,21 @@ static void log_error_if_nonzero(const char *message, int error_code)
         ESP_LOGE(TAG, "Last error %s: 0x%x", message, error_code);
     }
 }
+
+
+void read_dht11(int16_t *temperature, int16_t *humidity) { // DHT11 does not have a decimal level accuracy https://github.com/fengcda/DHT_Sensor_AVR_Library/tree/master
+    int16_t temp, hum;
+    esp_err_t result = dht_read_data(DHT_TYPE, DHT_GPIO, &hum, &temp);
+    
+    if (result == ESP_OK) {
+        *temperature = temp;
+        *humidity = hum;
+        ESP_LOGI(TAG, "DHT11 -> Temp: %d°C, Hum: %d%%", *temperature, *humidity);
+    } else {
+        ESP_LOGE(TAG, "Error leyendo el sensor DHT11: %s", esp_err_to_name(result));
+    }
+}
+
 
 /*
  * @brief Event handler registered to receive MQTT events
@@ -125,8 +147,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 static void mqtt_app_start(void)
 {
     int msg_id;
-    int temperature = 15;
-    int humidity = 5;
+    int16_t temperature, humidity;
 
     const esp_mqtt_client_config_t mqtt_cfg = {
         .broker.address.uri = BROKER_URI,
@@ -147,7 +168,8 @@ static void mqtt_app_start(void)
     // Código asociado a la medición
     while (1)
     {
-        
+        read_dht11(&temperature, &humidity);
+
         // Creación de un objeto JSON
         cJSON *mensaje = cJSON_CreateObject();
         cJSON_AddNumberToObject(mensaje, "dispositivoId", 23);
@@ -164,8 +186,8 @@ static void mqtt_app_start(void)
         msg_id = esp_mqtt_client_publish(client, "/daiot", json_string, 0, 0, 0);
         ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
         
-        temperature++;
-        humidity++;
+        //temperature++;
+        //humidity++;
         vTaskDelay(PERIODO_MEDICION*1000 / portTICK_PERIOD_MS);
 
     }
